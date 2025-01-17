@@ -152,8 +152,8 @@ block-beta
 
     mmma --"flat     "--> mma1
     mmma --"lift flat"--> mma2
-    maa1 --"flat     "--> ma
-    maa2 --"flat     "--> ma
+    mma1 --"flat     "--> ma
+    mma2 --"flat     "--> ma
 ```
 
 # 2. Monad in Mathematics
