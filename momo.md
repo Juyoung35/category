@@ -558,6 +558,60 @@ uncurrying_{n} :: (t1 -> t2 -> ... -> t{n} -> u) -> ((t1, t2, ..., {tn}) -> u)
 uncurrying_{n} t = (\(t1, t2, ..., t{n}) -> t t1 t2 ... t{n})
 ```
 
+# 1.5. How to use
+
+1. 모나드 함수 `lift`, `unit`, `flat`, `flatlift` 등을 직접 사용
+
+고차 함수 활용 방법과 다를 바 없음
+
+반복되는 패턴을 함수화
+
+```haskell
+foldl, reapply, repeat :: Container c => c t -> b -> (b -> a -> b) -> b
+```
+
+고차함수 특) 익명 함수를 인수로 보냄
+
+2. 언어마다 주어지는 모나드 전용 문법 사용
+
+```haskell
+do {
+  t <- opt_t
+  u <- opt_u
+  f(t, u)
+}
+
+-- "t <- opt_t"의 의미: 아래 있는 식을 t의 함수로 보고 flatlift한 다음 opt_t로 호출.
+
+flatlift (\t ->
+  flatlift (\u ->
+    f(t, u)
+  ) opt_u
+) opt_t
+```
+
+```haskell
+do {
+  t <- opt_t
+  unit(true)
+}
+-- 결과에 주는 영향: t가 Nothing이면 Nothing, Just a여야 통과..
+-- 이럴 때 변수 생략 기능
+do {
+  opt_t
+  unit(true)
+}
+-- 연산할 때마다 뭔가 부가 작용이 쌓이는 IO 모나드 같은 것에서 사용 가능
+-- 유사 명령형 코딩 가능함.
+```
+
+## 1.6 various monads
+
+`Optional`
+
+`List`
+
+`Future`: 미래에 어떤 이벤트가 발생한 후에만 얻을 수 있는 값
 
 # 2. Monad in Mathematics
 
