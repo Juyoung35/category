@@ -55,8 +55,8 @@ lift_3d t fa fb fc =
 
 ```haskell
 class Functor' m => Monad' m where
-  unit, return :: a -> m a
-  flat, join :: m (m a) -> m a
+  unit :: a -> m a       -- return이라는 이름을 쓰기도
+  flat :: m (m a) -> m a -- join이라는 이름을 쓰기도
 
   -- bind :: m a -> (a -> m b) -> m b
   -- flatmap :: (m a -> a -> m b) -> m b
@@ -558,7 +558,7 @@ uncurrying_{n} :: (t1 -> t2 -> ... -> t{n} -> u) -> ((t1, t2, ..., {tn}) -> u)
 uncurrying_{n} t = (\(t1, t2, ..., t{n}) -> t t1 t2 ... t{n})
 ```
 
-# 1.5. How to use
+## 1.5. How to use
 
 1. 모나드 함수 `lift`, `unit`, `flat`, `flatlift` 등을 직접 사용
 
@@ -607,12 +607,324 @@ do {
 
 ## 1.6 various monads
 
-`Optional`
+```haskell
+instance Functor' Maybe where
+  lift f (Just t) = 
+```
 
 `List`
 
 `Future`: 미래에 어떤 이벤트가 발생한 후에만 얻을 수 있는 값
 
 # 2. Monad in Mathematics
+
+프로그래밍의 모나드 - 수학의 모나드 중, 타입 카테고리의 모나드라고 하는 특별한 모나드에 불과
+
+Functor, Limit, Monad, Adjunction, Applicative, Comonad, ...
+
+## 2.1. Category
+
+카테고리 - 일종의 집합과 비슷한 것
+- object(대상): 원소의 정보
+- morphism(사상): 원소 간 관계의 정보
+    - F : A -> B, G : A -> B. 같은 대상 간에도 여러 개의 사상 존재 가능
+
+카테고리 조건
+1. 사상은 합성 가능해야.
+  f : A -> B, g : B -> C가 있으면, g . f : A -> C도 있어야 함.
+2. 사상은 결합법칙을 만족해야.
+  f : A -> B, g : B -> C, h : C -> D일 때, (h . g) . f = h . (g . f)
+3. 모든 대상은 자기자신으로 가는 항등사상이 있어야 함.
+  f . id = f, id . f = f
+
+우리는 많은 것을 합성 가능한 관계를 통해 분석한다.
+
+그런 분석은 항상 어떤 카테고리를 만들어내기 마련.
+
+서로 다른 집합들을 비교하고 대응시키기 가장 좋은 수단, 함수도 중요하게 다루는 집합론.
+
+Set, Grp, Top, ... 카테고리.
+
+수학의 여러 다른 분과에서 찾아지는 공통되는 구조를 함께 다루기 위해 만들어진 메타 수학 이론.
+
+타입과, 함수. Type 카테고리.
+
+Set 카테고리 : 모든 집합을 대상으로, 집합 간의 모든 함수를 사상으로 하는 카테고리
+
+보통 이런건 대상과 사상이 무한하니까 다이어그램 그릴 때는 그때그때 관심 있는 집합과 함수만 점과 화살표로 나타냄.
+
+bijection(전단사)의 일반화: isomorphism(동형사상)
+
+전단사 <=> 역함수의 존재
+
+isomorphism(동형사상)의 정의
+
+```
+사상 f : A -> B가 역사상 f^-1 : B -> A를 가지고 있고,
+f^-1 . f = id_A
+f . f^-1 = id_B를 만족하면 그것을 동형사상이라고 한다.
+두 대상 사이에 동형사상이 한 개라도 있으면, 두 대상을 isomorphic(동형)이라고 한다.
+A ~= B, B ~= C이면, A ~= C. 즉, 동형은 동치관계
+```
+
+Set 카테고리에서, 원소 수가 같은 집합들은 동형이 된다.
+
+injection(단사)의 일반화: monomorphism(단사사상)
+
+```
+사상 f : A -> B, 사상 g_1, g_2 : Z -> A
+f(g_1(x))와 f(g_2(x))가 모든 x에 대해 같다면 g_1(x)와 g_2(x)도 같을 수 밖에 없다.
+if f . g_1 = f . g_2, then g_1 = g_2
+```
+
+surjection(전사)의 일반화: epimorphism(전사사상)
+
+```
+사상 f : A -> B, 사상 g_1, g_2 : B -> Z
+f를 함수로 봤을 때, 집합 A의 어떤 부분집합에 대해서는 전단사 함수(단사성)이기 때문에
+g_1(f(x))와 g_2(f(x))가 모든 x에 대해 같다면 g_1(x)와 g_2(x)도 같을 수 밖에 없다.
+if g_1 . f = g_2 . f = g_1 = g_2
+```
+
+terminal object(카테고리에서 다른 모든 대상들에서 해당 대상으로 향하는 사상이 단 한 개만 있다면)
+
+```
+가지고 있을 수도, 없을 수도
+
+원소가 하나뿐인 집합들의 특징 : 모든 집합에 이러한 집합으로 가는 함수가 딱 한 개만 존재
+```
+
+initial object(카테고리에서 다른 모든 대상들로 향하는 사상이 단 한개만 갖도록 하는 대상)
+
+```
+Set 카테고리에서는, 공집합.
+모든 집합의 부분집합(이것도 관계, 사상으로 보기.)
+임의의 모든 집합(대상)에 대해 공집합에서 해당 집합으로 가는 사상 존재
+공집합도 항등사상 있어야 되니까 대응시키는 원소가 없더라도 함수로 치는 게 더 자연스럽다.
+```
+
+Curry-Howard correspondence : 논리학의 증명 연산과 프로그래밍의 타입 체계가 대응된다.
+
+서로 유사한 두 카테고리를 연결지을 수 있는 수단이 필요: 함자
+
+## 2.2. Functor
+
+동질의 대상들을 수학적으로 다루다 보면, 그것들을 비교하거나 대응시킬 수 있는 `수단`도 늘 필요해지기 마련.
+
+카테고리들을 비교하거나 대응시킬 수단도 필요하다. Functor
+
+함자 : 한 카테고리의 대상과 사상을, 다른 사상의 대상과 사상에 각각 대응시키는 관계. (대상과 사상 간의 관계와, 항등사상과, 사상의 합성도 보존해야)
+
+```
+f : X -> Y
+F(f) : F(X) -> F(Y) // F(f)는 이걸 만족해야.
+```
+
+함자끼리도 합성이 가능하다.
+
+임의의 모든 카테고리에 대해서 항등함자도 정의 가능.
+
+1절에서 일반적인 사상에 관해 다룬 모든 것들은 함자에도 적용됨. 동형사상, 단사사상, 전사사상.
+
+중요한 것 - 동형사상에 해당하는 함자들 : 다이어그램이 점과 화살표에 달린 레이블만 빼고 완전히 같은 카테고리들 사이에서만 존재.
+
+프로그래머들에게 있어 가장 중요한 함자 : 정의역과 공역이 같은 카테고리 C -> 카테고리 C.
+
+endofunctor(자기함자). 프로그래밍의 Functor는 `Type 카테고리의 자기함자`이다.
+
+물론, 프로그래밍에 다른 함자들도 많이 사용된다.
+
+```haskell
+-- 타입 컨트스럭터 Evaluator<T> : T -> double
+lift :: (a -> b) -> Evaluator a -> Evaluator b
+-- 는 함수의 항등성과 합성관계를 다 보존하도록 정의할 수 없다.
+
+-- anti_lift :: (b -> a) -> Evaluator a -> Evaulator b
+anti_lift :: (b -> a) -> (a -> double) -> (b -> double)
+anti_lift f ea = ea . f
+-- 는 정의 가능.
+```
+
+이건 Type에서 Type으로 가능 함자는 아니지만, 다른 어떤 카테고리에서 Type으로 가는 함자로 볼 수 있음.
+
+Type에서 사상의 방향만 반대로 한 카테고리, Type^op, Type의 opposite 카테고리.
+
+C의 모든 대상을 공유하면서 사상의 방향만 반대인 카테고리: C의 opposite 카테고리. C^op
+
+여기서는 함수 T -> U가 아니라, 함수 U -> T가 사상 T -> U로 취급된다.
+
+C^op에서 D로 가는 함자는: C에서 D로 가는 contravariant(반변)함자라고 한다.
+
+Evaluator는 Type에서 Type으로 가는 반변자기함자.
+
+
+
+일부 타입 컨스트럭터는 두 개 이상의 타입 인수 요구
+
+Pair<T, U>
+
+임의의 T에 대해 Pair<T, >, Pair< ,T>는 Type의 자기함자.
+
+Pair 자체는 어떨까?
+
+카테고리 C, D가 있을 때, C, D의 대상으로 이루어진 순서쌍들을 대상으로 하는 카테고리 C × D도 정의 가능.
+
+```
+f : X1 -> Y1
+g : X2 -> Y2
+C × D에서는 사상 (f, g) : (X1, X2) -> (Y1, Y2) // 모든 사상 순서쌍
+```
+
+이걸 product 카테고리라고 함.
+
+Pair는 Type × Type에서 Type으로 가는 함자임.
+
+일반적으로 타입 인수 두 개를 요구하는 타입 컨스트럭터는 각각의 타입의 타입 인수에 대해 모두 Type에서 Type으로 가는 자기함자일 경우, 항상 Type × Type에서 Type으로 가는 함자가 된다.
+
+```
+Pair< ,T> : Type -> Type
+Pair<T, > : Type -> Type
+Pair<T, U>: Type × Type -> Type
+```
+
+```haskell
+-- Function< ,T> : Type^op -> Type
+anti_lift :: (b -> a) -> (a -> t) -> (b -> t)
+-- Function<T, > : Type -> Type
+lift :: (a -> b) -> (t -> a) -> (t -> b)
+-- Function<T, U>: Type^op × Type -> Type
+```
+
+## 2.3. natural transformation
+
+같은 두 카테고리를 연결하는 함자들 중에서는 유사한 의미를 갖거나 서로 관계가 있는 것들이 있음.
+
+Type 카테고리에서 ArrayList 자기함자, LinkedList 자기함자.
+
+ArrayList : T -> ArrayList<T>
+LinkedList : T -> LinkedList<T>
+
+프로그래밍 언어에서 서로 다른 구현 원리에 기반한 수 많은 리스트 타입 제너릭이 존재
+
+이 리스트 함자들은 모두 동등. 다 동형. 각 리스트 타입 사이의 상호 변환 함수를 쉽게 정의할 수 있음.
+
+게다가 같은 lift 함수를 써서, to_linked, to_array와의 합성 순서에 따른 차이가 없음
+
+때로는 이러한 유사한 관계가 일방향 관계으로 존재하기도. Optional과 List. 같은 list 함수 써서 크게 상관 없음. to_optional은 없지만.
+
+=> 함자들 간에도 이들 간의 관계를 말해줄 수 있는 일종의 사상이 필요할 수 있다.
+
+natural transformation(자연변환)이 바로 그런 것.
+
+```
+함자 F : 카테고리 C -> 카테고리 D
+함자 G : 카테고리 C -> 카테고리 D
+
+카테고리 C의 모든 대상 X에 F(X)에서 G(X)로 가는 대응되는 D의 사상 \eta X가 존재한다면,
+그리고 그 대응이 C의 임의의 사상 f에 대해 D의 다이어그램을 commute(가환)하게 했다면
+F(f)   : F(X) -> F(Y)
+G(f)   : G(X) -> G(Y)
+\eta X : F(X) -> G(X)
+\eta Y : F(Y) -> G(Y)
+그 대응 \eta를 F에서 G로의 자연 변환이라고 한다.
+
+다이어그램의 가환성: 다이어그램의 한 점과 다른 한 점을 잇는 모든 경로가 같은 합성 사상을 준다는 것.
+어떤 경로로 두 사상을 합성하든 결과가 똑같다.
+```
+
+자연변환도 합성이 가능하다.
+
+```
+함자 F, G, H : C -> D가 있을 때
+\eta X     : F(X) -> G(X)
+\epsilon X : G(X) -> H(X)가 있으면
+자연변환 \epsilon . \eta도 정의할 수 있음.
+(\epsilon . \eta)(x) = \epsion(x) . \eta(x)
+자연변환 \epsilon . \eta의 자연변환 조건 만족.
+가환한 다이어그램을 연결시킨 것도 가환.
+
+이걸, 자연변환의 vertical composition(세로 합성)라고 함.
+F(X) -> G(X) -> H(X)에 세로로 행 추가
+F(Y) -> G(Y) -> H(Y)
+```
+
+```
+자연변환의 horizontal composition(가로 합성)
+F1, F2 : C -> D
+G1, G2 : D -> E
+// C의 대상은 X, D의 대상은 P
+\eta x     : F1(X) -> F2(X)
+\epsilon p : G1(P) -> G2(P)
+
+카테고리 E에다가 G1(F1(X)), G2(F2(X)).
+G1 . F1 : C -> E
+G2 . F2 : C -> E
+카테고리 E에다가 (\epsilon * \eta) x 정의 가능.
+```
+
+```
+항등 자연변환. identity natural transformation.
+임의의 함자 F에는 항등 자연 변환도 존재.
+```
+
+```
+같은 두 카테고리 사이의 자연변환은 세로합성을 통해 합성, 항등 자연변환도 있으므로,
+이 자체도 사상의 모든 조건 만족.
+
+대상과 사상으로 이뤄진 체계 카테고리.
+그 체계 사이의 사상이 함자.
+다시 그것들 사이에서 사상 역할 하는 게 자연변환.
+```
+
+프로그래밍에서 Functor는 확실히 lift라는 함수의 함수 같은 요소 포함하긴 함.
+
+```haskell
+class Functor f where
+  lift :: (a -> b) -> f a -> f b
+```
+
+자연변환. 한 Functor타입의 값을 다른 Functor타입으로 바꾸는 그냥 함수들.
+```haskell
+-- to_g :: (Functor f, g) => f t -> g t
+to_list :: Maybe a -> List a
+to_list ma = case of
+```
+
+대상들 간에 합성 가능한 관계는 무엇이든 사상이 된다.
+
+오히려 대상이 복잡할 수록 사상은 단순한게 나올 수 있다.
+
+함자 카테고리: 카테고리 C에서 D로 가는 함자들을 대상으로, 그들 사이의 자연변환을 사상으로 하는 카테고리.
+
+[C, D], D^C
+
+자기함자 카테고리. [C, C], C^C
+
+```
+대상들 사이에 합성이라는 이항연산 정의 가능. 이 연산에 대해 닫혀있음.
+F, G가 [C, C]의 대상이면, F . G도.
+합성 결합법칙 만족, 항등원소도 있음.
+
+사상 사이에도 이항연산 존재.
+\eta     : F1 -> F2
+\epsilon : G1 -> G2
+\epsilon * \eta : G1 . F1 -> G2 . F2
+```
+
+```
+(., *) : [C, C] × [C, C] -> [C, C]
+이러한 함자 정의 가능
+```
+
+모나드는 자기함자 카테고리의 모노이드일 뿐이다.
+
+## 2.4. monad
+
+```
+카테고리 C의 모나드 (T, \eta, \mu)는 C의 어떤 자기함자 T로써
+\eta : C의 항등함자 id_C ->  T로 가는 자연변환
+\mu  : T . T -> T로 가는 자연변환
+```
+
 
 # 3. Monad in practice
